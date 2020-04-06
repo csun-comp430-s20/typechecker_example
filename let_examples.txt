@@ -1,0 +1,47 @@
+// 1 + 2
+//
+// let x: int = 1 in
+//   x + 2
+// whole let returns: x + 2 = 1 + 2 = 3
+//
+// int x = 1;
+// {
+//    x + 2;
+// }
+//
+// let x: int = 1 in
+//   let x: int = 3 in
+//     x + 2 // 3 + 2 = 5
+//
+// int x = 1;
+// {
+//   int x = 3;
+//   {
+//      x + 2
+//   }
+// }
+//
+// let x: int = 1 in
+//   2 + 2
+//
+// int x = 1;
+// 2 + 2;
+//
+// x = e
+//
+// assign x = e_1 in e_2
+//
+// let x: int = 1 in
+//   assign x = 2 in
+//     x + 3 // 2 + 3
+//
+// let x: int = 1 in      // x_0: int
+//   assign x = 2 in      // x_0: int
+//     let x: int = 3 in  // x_0: int, x_1: int
+//       x + 1 // 3 + 1   // x_0: int, x_1: int
+//
+// int x = x;
+
+// let x: int = x in x // ill-typed
+//
+// let x: int = 3 in x
