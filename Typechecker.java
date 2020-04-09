@@ -24,12 +24,92 @@ public class Typechecker {
     //   int z = y + y;   [x -> int, y -> int, z -> int]     [x -> int, y -> int]
     // }                  [x -> int, y -> int, z -> int]
     // int a = x + x;     [x -> int, a -> int]               [x -> int]
-    
-    public static Map<Variable, Type> typecheckStmt(final Map<Variable, Type> gamma,
-                                                    final Stmt s) throws IllTypedException { ... }
+
+    public static Map<Variable, Type> makeCopy(final Map<Variable, Type> gamma) {
+        final Map<Variable, Type> copy = new HashMap<Variable, Type>();
+        copy.putAll(gamma);
+        return copy;
+    }
+
+    public static Map<Variable, Type> typecheckStmts(
+                          Map<Variable, Type> gamma,
+                          final boolean breakAndContinueOk,
+                          final List<Stmt> stmts) throws IllTypedException {
+        for (final Stmt s : stmts) {
+            //                  result gamma
+            // initial          []
+            // int x = 7;       [x -> int]
+            // int y = x + 3;   [x -> int, y -> int]
+            // int z = y + x;   [x -> int, y -> int, z -> int]
+            gamma = typecheckStmt(gamma, breakAndContinueOk, s);
+        }
+
+        return gamma;
+    }
+        
+    public static Map<Variable, Type> typecheckStmt(
+                          final Map<Variable, Type> gamma,
+                          final boolean breakAndContinueOk,
+                          final Stmt s) throws IllTypedException {
+        // x
+        if (s instanceof LetStmt) {
+            //     x  tau   e
+            // let x: int = 3
+            // let y: int = x + x
+            //
+            // let z: int = bool
+            final LetStmt asLet = (LetStmt)s;
+            if (typeof(gamma, asLet.e).equals(asLet.tau)) {
+                final Map<Variable, Type> copy = makeCopy(gamma);
+                copy.put(asLet.x, asLet.tau);
+                return copy;
+            } else {
+                throw new IllTypedException("type mismatch in let");
+            }
+        } else if (s instanceof AssignStmt) {
+            // int int
+            // x = 1 + 2
+            final AssignStmt asAssign = (AssignStmt)s;
+            if (gamma.containsKey(asAssign.x)) {
+                final Type variableType = gamma.get(asAssign.x);
+                if (typeof(gamma, asAssign.e).equals(variableType)) {
+                    return gamma;
+                } else {
+                    throw new IllTypedException("Assigned something of wrong type");
+                }
+            } else {
+                throw new IllTypedException("Assigning to variable not in scope");
+            }
+        } else if (s instanceof BreakStmt) {
+            if (!breakAndContinueOk) {
+                throw new IllTypedException("break outside of a loop");
+            }
+        } else if (s instanceof ForStmt) {
+            // for(int x = 0; x < 10; x++) { s* }
+            // gamma: []
+            // newGamma: [x -> int]
+            // for(int x = 0; x < 10; int y = 10) {
+            //   int y = 0;
+            //   int z = x + y;
+            //   [x -> int, y -> int, z -> int]
+            // }
+            final ForStmt asFor = (ForStmt)s;
+            final Map<Variable, Type> newGamma = typecheckStmt(gamma, asFor.initializer);
+            final Type guardType = typeof(newGamma, asFor.guard);
+            if (guardType instanceof BoolType) {
+                typecheckStmt(newGamma, asFor.update);
+                typecheckStmts(newGamma, true, asFor.body);
+            }
+            return gamma;
+        } else {
+            assert(false);
+            throw new IllTypedException("Unrecognized statement");
+        }
+    }
 
     // typeof(Gamma, e2) == BoolType
-    public static Type typeof(final Map<Variable, Type> gamma, final Exp e) throws IllTypedException {
+    public static Type typeof(final Map<Variable, Type> gamma,
+                              final Exp e) throws IllTypedException {
         if (e instanceof IntegerExp) {
             return new IntType();
         } else if (e instanceof BooleanExp) {
@@ -78,37 +158,6 @@ public class Typechecker {
                 return tau;
             } else {
                 throw new IllTypedException("Not in scope: " + asVar.x);
-            }
-        } else if (e instanceof LetExp) {
-            //              e1   e2
-            // let x: int = 3 in x + x
-            // let y: int = 4 in true
-            // let z: bool = 5 in ...
-            final LetExp asLet = (LetExp)e;
-            if (typeof(gamma, asLet.e1).equals(asLet.tau)) {
-                final Map<Variable, Type> copy = (Map<Variable, Type>)gamma.clone();
-                copy.put(asLet.x, asLet.tau);
-                final Type tau2 = typeof(copy, asLet.e2);
-                return tau2;
-            } else {
-                throw new IllTypedException("type mismatch with let");
-            }
-        } else if (e instanceof AssignExp) {
-            // let x: int = 3 in
-            //   assign x = false in
-            //     true
-
-            final AssignExp asAssign = (AssignExp)e;
-            if (gamma.containsKey(asAssign.x)) {
-                final Type tau1 = gamma.get(asAssign.x);
-                if (typeof(gamma, asAssign.e1).equals(tau1)) {
-                    final Type tau2 = typeof(gamma, asAssign.e2);
-                    return tau2;
-                } else {
-                    throw new IllTypedException("type mismatch on assign: putting wrong type inside");
-                }
-            } else {
-                throw new IllTypedException("variable not in scope");
             }
         } else {
             assert(false);
