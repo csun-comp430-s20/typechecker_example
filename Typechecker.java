@@ -166,6 +166,32 @@ public class Typechecker {
             } else {
                 throw new IllTypedException("Not in scope: " + asVar.x);
             }
+        } else if (e instanceof HigherOrderFunctionDef) {
+            // (x: Int) => x + 1
+            // Int => Int
+            final HigherOrderFunctionDef asFunc = (HigherOrderFunctionDef)e;
+            final Map<Variable, Type> copy = makeCopy(gamma);
+            copy.put(asFunc.paramName, asFunc.paramType);
+            final Type bodyType = typeof(copy, asFunc.body);
+            return new FunctionType(asFunc.paramType, bodyType);
+        } else if (e instanceof CallHigherOrderFunction) {
+            // e1(e2)
+            // e1: (x: Int) => x + 1 [Int => Int]
+            // e2: 7 [Int]
+            // e1(e2): [Int]
+            final CallHigherOrderFunction asCall = (CallHigherOrderFunction)e;
+            final Type hopefullyFunction = typeof(gamma, asCall.theFunction);
+            final Type hopefullyParameter = typeof(gamma, asCall.theParameter);
+            if (hopefullyFunction instanceof FunctionType) {
+                final FunctionType asFunc = (FunctionType)hopefullyFunction;
+                if (asFunc.paramType.equals(hopefullyParameter)) {
+                    return asFunc.returnType;
+                } else {
+                    throw new IllTypedException("Parameter type mismatch");
+                }
+            } else {
+                throw new IllTypedException("call of non-function");
+            }
         } else {
             assert(false);
             throw new IllTypedException("unrecognized expression");

@@ -1,4 +1,6 @@
 public class BoolType implements Type {
+    public BoolType() {}
+    
     @Override
     public boolean equals(final Object other) {
         return other instanceof BoolType;
