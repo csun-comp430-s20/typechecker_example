@@ -1,4 +1,5 @@
 import java.util.Map;
+import java.util.HashMap;
 
 public class Typechecker {
     // int bar(int x) { ... }
@@ -31,6 +32,12 @@ public class Typechecker {
         return copy;
     }
 
+    public static void typecheckProgram(final Program program) throws IllTypedException {
+        typecheckStmts(new HashMap<Variable, Type>(),
+                       false,
+                       program.statements);
+    } // typecheckProgram
+    
     public static Map<Variable, Type> typecheckStmts(
                           Map<Variable, Type> gamma,
                           final boolean breakAndContinueOk,
@@ -105,7 +112,7 @@ public class Typechecker {
             assert(false);
             throw new IllTypedException("Unrecognized statement");
         }
-    }
+    } // typecheckStmt
 
     // typeof(Gamma, e2) == BoolType
     public static Type typeof(final Map<Variable, Type> gamma,

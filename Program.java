@@ -3,7 +3,7 @@ import java.util.List;
 // p ::= s*
 
 public class Program {
-    private final List<Stmt> statements;
+    public final List<Stmt> statements;
     
     public Program(final List<Stmt> statements) {
         this.statements = statements;
