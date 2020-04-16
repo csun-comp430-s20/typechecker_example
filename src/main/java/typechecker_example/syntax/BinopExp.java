@@ -1,3 +1,5 @@
+package typechecker_example.syntax;
+
 // e \in Exp ::= x | i | true | false | e1 op e2
 // op \in BOP ::= && | + | <
 

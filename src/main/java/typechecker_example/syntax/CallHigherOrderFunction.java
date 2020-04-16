@@ -1,3 +1,5 @@
+package typechecker_example.syntax;
+
 // e1(e2)
 // f(1)
 // ((x : Int) => x + 1)(3 + 2)

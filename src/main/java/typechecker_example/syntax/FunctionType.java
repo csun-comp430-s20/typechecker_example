@@ -1,3 +1,5 @@
+package typechecker_example.syntax;
+
 // t1 => t2
 public class FunctionType implements Type {
     public final Type paramType;

@@ -1,3 +1,5 @@
+package typechecker_example.syntax;
+
 //          formal parameters
 // bool foo(int x, int y) { return x < y; }
 //

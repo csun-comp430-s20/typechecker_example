@@ -1,3 +1,5 @@
+package typechecker_example.syntax;
+
 public class IntType implements Type {
     public IntType() {}
     

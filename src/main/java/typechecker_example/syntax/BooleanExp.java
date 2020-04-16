@@ -1,3 +1,5 @@
+package typechecker_example.syntax;
+
 // TrueExp; new BooleanExp(true)
 // FalseExp; new BooleanExp(false)
 public class BooleanExp implements Exp {

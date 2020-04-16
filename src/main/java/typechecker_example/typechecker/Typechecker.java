@@ -1,3 +1,7 @@
+package typechecker_example.typechecker;
+
+import typechecker_example.syntax.*;
+
 import java.util.Map;
 import java.util.HashMap;
 

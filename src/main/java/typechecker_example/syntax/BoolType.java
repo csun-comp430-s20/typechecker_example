@@ -1,3 +1,5 @@
+package typechecker_example.syntax;
+
 public class BoolType implements Type {
     public BoolType() {}
     

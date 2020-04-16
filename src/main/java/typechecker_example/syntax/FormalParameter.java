@@ -1,3 +1,5 @@
+package typechecker_example.syntax;
+
 public class FormalParameter {
     public final Type theType;
     public final Variable theVariable;

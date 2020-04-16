@@ -1,3 +1,5 @@
+package typechecker_example.syntax;
+
 public class VariableExp implements Exp {
     public final Variable x;
 

@@ -1,3 +1,5 @@
+package typechecker_example.syntax;
+
 // "foo" + "bar" = "foobar"
 // 1 + 2 = 3
 // "foo" + 1 = "foo1"

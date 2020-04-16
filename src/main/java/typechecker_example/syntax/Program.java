@@ -1,3 +1,5 @@
+package typechecker_example.syntax;
+
 import java.util.List;
 
 // int main() {

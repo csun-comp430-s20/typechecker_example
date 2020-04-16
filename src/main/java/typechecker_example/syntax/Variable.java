@@ -1,3 +1,5 @@
+package typechecker_example.syntax;
+
 public class Variable {
     public final String name;
 

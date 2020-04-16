@@ -1,3 +1,5 @@
+package typechecker_example.syntax;
+
 public class LetStmt implements Stmt {
     public final Variable x;
     public final Type tau;

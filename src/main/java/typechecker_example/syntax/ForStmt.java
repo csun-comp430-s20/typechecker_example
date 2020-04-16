@@ -1,3 +1,5 @@
+package typechecker_example.syntax;
+
 // for(int x = 0; x < 10; x++) { ... }
 //
 // for(s1; e; s2) { ... }
