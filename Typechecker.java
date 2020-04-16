@@ -26,16 +26,92 @@ public class Typechecker {
     // }                  [x -> int, y -> int, z -> int]
     // int a = x + x;     [x -> int, a -> int]               [x -> int]
 
+    private final Program program;
+    private final Map<FunctionName, FirstOrderFunctionDefinition> functionDefinitions;
+
+    // int bar(int x) {
+    //   return x;
+    // }
+    //
+    // String bar(String y) {
+    //   return y + "blah";
+    // }
+    //
+    // let x: int = bar(7);
+    public Typechecker(final Program program) throws IllTypedException {
+        // with overloading:
+        // functionDefinitions = new HashMap<(FunctionName, ParameterTypes), FirstOrderFunctionDefinition>();
+        this.program = program;
+        functionDefinitions = new HashMap<FunctionName, FirstOrderFunctionDefinition>();
+        for (final FirstOrderFunctionDefinition function : program.functions) {
+            if (!functionDefinitions.containsKey(function.name)) {
+                functionDefinitions.put(function.name, function);
+            } else {
+                throw new IllTypedException("Duplicate function name: " + function.name);
+            }
+        }
+
+        // for (final FirstOrderFunctionDefinition function : program.functions) {
+        //     typecheckFunction(function);
+        // }
+    }
+    
     public static Map<Variable, Type> makeCopy(final Map<Variable, Type> gamma) {
         final Map<Variable, Type> copy = new HashMap<Variable, Type>();
         copy.putAll(gamma);
         return copy;
     }
 
-    public static void typecheckProgram(final Program program) throws IllTypedException {
-        typecheckStmts(new HashMap<Variable, Type>(),
-                       false,
-                       program.statements);
+    // int bar(int x) {
+    //   return x + 5;
+    // }
+    //
+    // int foo(int x) {
+    //   return bar(x);
+    // }
+    //
+    // bool isEven(int x) {
+    //   if (x == 2) {
+    //     return true;
+    //   } else {
+    //     return isOdd(x - 1);
+    //   }
+    // }
+    //
+    // bool isOdd(int x) {
+    //   if (x == 1) {
+    //     return true;
+    //   } else {
+    //     return isEven(x - 1);
+    //   }
+    // }
+    //
+    // int sum(int x, int y) {
+    //   return x + y;
+    // }
+    //
+    // void blah(int y) {
+    //   x = y;
+    // }
+    //
+    // void someValue = blah(1);
+    //
+    // -Which functions are declared?
+    // -What parameter types do they take?
+    // -What return types to they have?
+    //
+    // [bar -> (int, (int)),
+    //  foo -> (int, (int)),
+    //  isEven -> (bool, (int)),
+    //  isOdd -> (bool, (int)),
+    //  sum -> (int, (int, int))]
+    public void typecheckProgram() throws IllTypedException {
+        for (final FirstOrderFunctionDefinition function : program.functions) {
+            typecheckFunction(function);
+        }
+        // typecheckStmts(new HashMap<Variable, Type>(),
+        //                false,
+        //                program.statements);
     } // typecheckProgram
     
     public static Map<Variable, Type> typecheckStmts(

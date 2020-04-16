@@ -1,12 +1,16 @@
 import java.util.List;
 
-// p ::= s*
+// int main() {
+//   ...
+// }
+//
+// p ::= firstOrderFunction*
 
 public class Program {
-    public final List<Stmt> statements;
+    public final List<FirstOrderFunctionDefinition> functions;
     
-    public Program(final List<Stmt> statements) {
-        this.statements = statements;
+    public Program(final List<FirstOrderFunctionDefinition> functions) {
+        this.functions = functions;
     }
 }
 
