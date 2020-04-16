@@ -31,7 +31,6 @@ public class Typechecker {
     // }                  [x -> int, y -> int, z -> int]
     // int a = x + x;     [x -> int, a -> int]               [x -> int]
 
-    private final Program program;
     private final Map<FunctionName, FirstOrderFunctionDefinition> functionDefinitions;
 
     // int bar(int x) {
@@ -43,10 +42,11 @@ public class Typechecker {
     // }
     //
     // let x: int = bar(7);
+    //
+    // Takes function definitions which will be in scope, but does NOT typecheck them.
     public Typechecker(final Program program) throws IllTypedException {
         // with overloading:
         // functionDefinitions = new HashMap<(FunctionName, ParameterTypes), FirstOrderFunctionDefinition>();
-        this.program = program;
         functionDefinitions = new HashMap<FunctionName, FirstOrderFunctionDefinition>();
         for (final FirstOrderFunctionDefinition function : program.functions) {
             if (!functionDefinitions.containsKey(function.name)) {
@@ -55,17 +55,38 @@ public class Typechecker {
                 throw new IllTypedException("Duplicate function name: " + function.name);
             }
         }
+    } // Typechecker
 
-        // for (final FirstOrderFunctionDefinition function : program.functions) {
-        //     typecheckFunction(function);
-        // }
-    }
-    
+    public void typecheckProgram(final Program program)
+        throws IllTypedException {
+        for (final FirstOrderFunctionDefinition function : program.functions) {
+            typecheckFunction(function);
+        }
+    } // typecheckProgram
+
+    public void typecheckFunction(final FirstOrderFunctionDefinition function)
+        throws IllTypedException {
+        final Map<Variable, Type> gamma = new HashMap<Variable, Type>();
+        for (final FormalParameter formalParam : function.formalParams) {
+            if (!gamma.containsKey(formalParam.theVariable)) {
+                gamma.put(formalParam.theVariable, formalParam.theType);
+            } else {
+                throw new IllTypedException("Duplicate formal parameter name");
+            }
+        }
+
+        final Map<Variable, Type> finalGamma = typecheckStmts(gamma, false, function.body);
+        final Type actualReturnType = typeof(finalGamma, function.returnExp);
+        if (!actualReturnType.equals(function.returnType)) {
+            throw new IllTypedException("return type mismatch");
+        }
+    } // typecheckFunction
+
     public static Map<Variable, Type> makeCopy(final Map<Variable, Type> gamma) {
         final Map<Variable, Type> copy = new HashMap<Variable, Type>();
         copy.putAll(gamma);
         return copy;
-    }
+    } // makeCopy
 
     // int bar(int x) {
     //   return x + 5;
@@ -110,19 +131,11 @@ public class Typechecker {
     //  isEven -> (bool, (int)),
     //  isOdd -> (bool, (int)),
     //  sum -> (int, (int, int))]
-    public void typecheckProgram() throws IllTypedException {
-        for (final FirstOrderFunctionDefinition function : program.functions) {
-            //typecheckFunction(function);
-        }
-        // typecheckStmts(new HashMap<Variable, Type>(),
-        //                false,
-        //                program.statements);
-    } // typecheckProgram
     
-    public static Map<Variable, Type> typecheckStmts(
-                          Map<Variable, Type> gamma,
-                          final boolean breakAndContinueOk,
-                          final List<Stmt> stmts) throws IllTypedException {
+    public Map<Variable, Type> typecheckStmts(Map<Variable, Type> gamma,
+                                              final boolean breakAndContinueOk,
+                                              final List<Stmt> stmts)
+        throws IllTypedException {
         for (final Stmt s : stmts) {
             //                  result gamma
             // initial          []
@@ -133,12 +146,12 @@ public class Typechecker {
         }
 
         return gamma;
-    }
+    } // typecheckStmts
         
-    public static Map<Variable, Type> typecheckStmt(
-                          final Map<Variable, Type> gamma,
-                          final boolean breakAndContinueOk,
-                          final Stmt s) throws IllTypedException {
+    public Map<Variable, Type> typecheckStmt(final Map<Variable, Type> gamma,
+                                             final boolean breakAndContinueOk,
+                                             final Stmt s)
+        throws IllTypedException {
         // x
         if (s instanceof LetStmt) {
             //     x  tau   e
@@ -204,8 +217,9 @@ public class Typechecker {
     } // typecheckStmt
 
     // typeof(Gamma, e2) == BoolType
-    public static Type typeof(final Map<Variable, Type> gamma,
-                              final Exp e) throws IllTypedException {
+    public Type typeof(final Map<Variable, Type> gamma,
+                       final Exp e)
+        throws IllTypedException {
         if (e instanceof IntegerExp) {
             return new IntType();
         } else if (e instanceof BooleanExp) {
