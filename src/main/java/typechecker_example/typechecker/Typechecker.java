@@ -3,6 +3,7 @@ package typechecker_example.typechecker;
 import typechecker_example.syntax.*;
 
 import java.util.Map;
+import java.util.List;
 import java.util.HashMap;
 
 public class Typechecker {
@@ -111,7 +112,7 @@ public class Typechecker {
     //  sum -> (int, (int, int))]
     public void typecheckProgram() throws IllTypedException {
         for (final FirstOrderFunctionDefinition function : program.functions) {
-            typecheckFunction(function);
+            //typecheckFunction(function);
         }
         // typecheckStmts(new HashMap<Variable, Type>(),
         //                false,
@@ -168,8 +169,16 @@ public class Typechecker {
                 throw new IllTypedException("Assigning to variable not in scope");
             }
         } else if (s instanceof BreakStmt) {
-            if (!breakAndContinueOk) {
+            if (breakAndContinueOk) {
+                return gamma;
+            } else {
                 throw new IllTypedException("break outside of a loop");
+            }
+        } else if (s instanceof ContinueStmt) {
+            if (breakAndContinueOk) {
+                return gamma;
+            } else {
+                throw new IllTypedException("continue outside of a loop");
             }
         } else if (s instanceof ForStmt) {
             // for(int x = 0; x < 10; x++) { s* }
@@ -181,10 +190,10 @@ public class Typechecker {
             //   [x -> int, y -> int, z -> int]
             // }
             final ForStmt asFor = (ForStmt)s;
-            final Map<Variable, Type> newGamma = typecheckStmt(gamma, asFor.initializer);
+            final Map<Variable, Type> newGamma = typecheckStmt(gamma, breakAndContinueOk, asFor.initializer);
             final Type guardType = typeof(newGamma, asFor.guard);
             if (guardType instanceof BoolType) {
-                typecheckStmt(newGamma, asFor.update);
+                typecheckStmt(newGamma, breakAndContinueOk, asFor.update);
                 typecheckStmts(newGamma, true, asFor.body);
             }
             return gamma;
