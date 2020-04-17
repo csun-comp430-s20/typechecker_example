@@ -285,6 +285,16 @@ public class TypecheckerTest {
                                            new BooleanExp(true)));
     }
 
+    @Test(expected = IllTypedException.class)
+    public void cannotCallNonHigherOrderFunction() throws IllTypedException {
+        // [x -> int] x(true)
+        final Variable x = new Variable("x");
+
+        typeof(makeGamma(new String[]{ "x" }, new Type[]{ new IntType() }),
+               new CallHigherOrderFunction(new VariableExp(x),
+                                           new BooleanExp(true)));
+    }
+
     @Test
     public void emptyStmtDoesNothing() throws IllTypedException {
         assertEquals(makeEmptyGamma(),
