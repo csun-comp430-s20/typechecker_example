@@ -26,4 +26,9 @@ public class FunctionType implements Type {
     public int hashCode() {
         return paramType.hashCode() + returnType.hashCode();
     }
+
+    @Override
+    public String toString() {
+        return "(" + paramType.toString() + " => " + returnType.toString() + ")";
+    }
 } // FunctionType
