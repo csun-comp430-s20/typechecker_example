@@ -5,6 +5,7 @@ import typechecker_example.syntax.*;
 import java.util.Map;
 import java.util.List;
 import java.util.HashMap;
+import java.util.Iterator;
 
 public class Typechecker {
     // int bar(int x) { ... }
@@ -295,9 +296,41 @@ public class Typechecker {
             } else {
                 throw new IllTypedException("call of non-function");
             }
+        } else if (e instanceof CallFirstOrderFunction) {
+            final CallFirstOrderFunction asCall = (CallFirstOrderFunction)e;
+            if (functionDefinitions.containsKey(asCall.functionName)) {
+                final FirstOrderFunctionDefinition fdef = functionDefinitions.get(asCall.functionName);
+                checkFormalParams(gamma, fdef.formalParams, asCall.actualParams);
+                return fdef.returnType;
+            } else {
+                throw new IllTypedException("function does not exist: " + asCall.functionName);
+            }
         } else {
             assert(false);
             throw new IllTypedException("unrecognized expression");
         }
     } // typeof
+
+    private void checkFormalParams(final Map<Variable, Type> gamma,
+                                   final List<FormalParameter> formalParams,
+                                   final List<Exp> actualParams)
+        throws IllTypedException {
+        if (formalParams.size() == actualParams.size()) {
+            final Iterator<FormalParameter> formalIterator = formalParams.iterator();
+            final Iterator<Exp> actualIterator = actualParams.iterator();
+            while (formalIterator.hasNext() && actualIterator.hasNext()) {
+                final FormalParameter formalParam = formalIterator.next();
+                final Exp actualParam = actualIterator.next();
+                final Type actualType = typeof(gamma, actualParam);
+                if (!actualType.equals(formalParam.theType)) {
+                    throw new IllTypedException("Parameter type mismatch");
+                }
+            }
+
+            assert(!formalIterator.hasNext());
+            assert(!actualIterator.hasNext());
+        } else {
+            throw new IllTypedException("wrong number of arguments");
+        }
+    } // checkFormalParams
 } // Typechecker
