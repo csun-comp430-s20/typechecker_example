@@ -209,7 +209,11 @@ public class Typechecker {
             if (guardType instanceof BoolType) {
                 typecheckStmt(newGamma, breakAndContinueOk, asFor.update);
                 typecheckStmts(newGamma, true, asFor.body);
+            } else {
+                throw new IllTypedException("Guard in for must be boolean");
             }
+            return gamma;
+        } else if (s instanceof EmptyStmt) {
             return gamma;
         } else {
             assert(false);

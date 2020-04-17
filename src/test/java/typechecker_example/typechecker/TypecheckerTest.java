@@ -71,6 +71,12 @@ public class TypecheckerTest {
         return (new Typechecker(makeProgram())).typeof(gamma, e);
     } // typeof
 
+    public static Map<Variable, Type> statementGamma(final Stmt... stmts) throws IllTypedException {
+        return new Typechecker(makeProgram()).typecheckStmts(makeEmptyGamma(),
+                                                             false,
+                                                             makeStatements(stmts));
+    } // statementGamma
+    
     @Test
     public void canAccessIntVariableInScope() throws IllTypedException {
         assertEquals(new IntType(),
@@ -244,6 +250,153 @@ public class TypecheckerTest {
         typeof(makeGamma(new String[]{ "x" }, new Type[]{ ft }),
                new CallHigherOrderFunction(new VariableExp(x),
                                            new BooleanExp(true)));
+    }
+
+    @Test
+    public void emptyStmtDoesNothing() throws IllTypedException {
+        assertEquals(makeEmptyGamma(),
+                     statementGamma(new EmptyStmt()));
+    }
+    
+    @Test(expected = IllTypedException.class)
+    public void continueIsErrorIfNotInLoop() throws IllTypedException {
+        statementGamma(new ContinueStmt());
+    }
+
+    @Test
+    public void continueIsOkInLoop() throws IllTypedException {
+        assertEquals(makeEmptyGamma(),
+                     statementGamma(new ForStmt(new EmptyStmt(),
+                                                new BooleanExp(true),
+                                                new EmptyStmt(),
+                                                makeStatements(new ContinueStmt()))));
+    }
+    
+    @Test(expected = IllTypedException.class)
+    public void breakIsErrorIfNotInLoop() throws IllTypedException {
+        statementGamma(new BreakStmt());
+    }
+
+    @Test
+    public void breakIsOkInLoop() throws IllTypedException {
+        assertEquals(makeEmptyGamma(),
+                     statementGamma(new ForStmt(new EmptyStmt(),
+                                                new BooleanExp(true),
+                                                new EmptyStmt(),
+                                                makeStatements(new BreakStmt()))));
+    }
+
+    @Test
+    public void letPutsVariableInScope() throws IllTypedException {
+        // let x: int = 3
+        assertEquals(makeGamma(new String[]{ "x" }, new Type[]{ new IntType() }),
+                     statementGamma(new LetStmt(new Variable("x"),
+                                                new IntType(),
+                                                new IntegerExp(3))));
+    }
+
+    @Test
+    public void letShadowsLastBinding() throws IllTypedException {
+        // let x: int = 3
+        // let x: bool = true
+        assertEquals(makeGamma(new String[]{ "x" }, new Type[]{ new BoolType() }),
+                     statementGamma(new LetStmt(new Variable("x"),
+                                                new IntType(),
+                                                new IntegerExp(3)),
+                                    new LetStmt(new Variable("x"),
+                                                new BoolType(),
+                                                new BooleanExp(true))));
+    }
+
+    @Test(expected = IllTypedException.class)
+    public void letNeedsCorrectTypeAnnotation() throws IllTypedException {
+        // let x: int = true
+        statementGamma(new LetStmt(new Variable("x"),
+                                   new IntType(),
+                                   new BooleanExp(true)));
+    }
+
+    @Test
+    public void assignmentWorks() throws IllTypedException {
+        // let x: int = 3
+        // x = 4
+        assertEquals(makeGamma(new String[]{ "x" }, new Type[]{ new IntType() }),
+                     statementGamma(new LetStmt(new Variable("x"),
+                                                new IntType(),
+                                                new IntegerExp(3)),
+                                    new AssignStmt(new Variable("x"), new IntegerExp(4))));
+    }
+
+    @Test(expected = IllTypedException.class)
+    public void assignmentNeedsVariableInScope() throws IllTypedException {
+        // x = 4
+        statementGamma(new AssignStmt(new Variable("x"), new IntegerExp(4)));
+    }
+
+    @Test(expected = IllTypedException.class)
+    public void assignmentNeedsToBeOfSameType() throws IllTypedException {
+        // let x: int = 3
+        // x = true
+        statementGamma(new LetStmt(new Variable("x"),
+                                   new IntType(),
+                                   new IntegerExp(3)),
+                       new AssignStmt(new Variable("x"), new BooleanExp(true)));
+    }
+
+    @Test
+    public void normalForTypechecks() throws IllTypedException {
+        // for(let x: int = 0; x < 10; x = x + 1) {}
+        final Variable x = new Variable("x");
+        assertEquals(makeEmptyGamma(),
+                     statementGamma(new ForStmt(new LetStmt(x,
+                                                            new IntType(),
+                                                            new IntegerExp(0)),
+                                                new BinopExp(new VariableExp(x),
+                                                             new LessThanBOP(),
+                                                             new IntegerExp(10)),
+                                                new AssignStmt(x,
+                                                               new BinopExp(new VariableExp(x),
+                                                                            new PlusBOP(),
+                                                                            new IntegerExp(1))),
+                                                makeStatements())));
+    }
+
+    @Test(expected = IllTypedException.class)
+    public void conditionInForMustBeBoolean() throws IllTypedException {
+        // for(let x: int = 0; 10; x = x + 1) {}
+        final Variable x = new Variable("x");
+        statementGamma(new ForStmt(new LetStmt(x,
+                                               new IntType(),
+                                               new IntegerExp(0)),
+                                   new IntegerExp(10),
+                                   new AssignStmt(x,
+                                                  new BinopExp(new VariableExp(x),
+                                                               new PlusBOP(),
+                                                               new IntegerExp(1))),
+                                   makeStatements()));
+    }
+
+    @Test
+    public void initializerInScopeInForBody() throws IllTypedException {
+        // for(let x: int = 0; x < 10; x = x + 1) {
+        //   x = x + 1;
+        // }
+        final Variable x = new Variable("x");        
+        final AssignStmt increment =
+            new AssignStmt(x,
+                           new BinopExp(new VariableExp(x),
+                                        new PlusBOP(),
+                                        new IntegerExp(1)));
+
+        assertEquals(makeEmptyGamma(),
+                     statementGamma(new ForStmt(new LetStmt(x,
+                                                            new IntType(),
+                                                            new IntegerExp(0)),
+                                                new BinopExp(new VariableExp(x),
+                                                             new LessThanBOP(),
+                                                             new IntegerExp(10)),
+                                                increment,
+                                                makeStatements(increment))));
     }
 
     @Test(expected = IllTypedException.class)
