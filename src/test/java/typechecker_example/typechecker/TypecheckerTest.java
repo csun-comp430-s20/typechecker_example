@@ -190,4 +190,29 @@ public class TypecheckerTest {
                                                        new BoolType(),
                                                        new VariableExp(x))));
     }
+
+    @Test
+    public void higherOrderFunctionsCanBeCalled() throws IllTypedException {
+        // [x -> int => bool] x(3)
+        final FunctionType ft = new FunctionType(new IntType(),
+                                                 new BoolType());
+        final Variable x = new Variable("x");
+
+        assertEquals(new BoolType(),
+                     typeof(makeGamma(new String[]{ "x" }, new Type[]{ ft }),
+                            new CallHigherOrderFunction(new VariableExp(x),
+                                                        new IntegerExp(0))));
+    }
+
+    @Test(expected = IllTypedException.class)
+    public void higherOrderFunctionsNeedCorrectType() throws IllTypedException {
+        // [x -> int => bool] x(true)
+        final FunctionType ft = new FunctionType(new IntType(),
+                                                 new BoolType());
+        final Variable x = new Variable("x");
+
+        typeof(makeGamma(new String[]{ "x" }, new Type[]{ ft }),
+               new CallHigherOrderFunction(new VariableExp(x),
+                                           new BooleanExp(true)));
+    }
 } // TypecheckerTest
