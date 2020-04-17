@@ -140,4 +140,54 @@ public class TypecheckerTest {
                             new PlusBOP(),
                             new BooleanExp(false)));
     }
+
+    @Test
+    public void canCreateHigherOrderFunction() throws IllTypedException {
+        // (x: int) => true
+        assertEquals(new FunctionType(new IntType(), new BoolType()),
+                     typeof(makeEmptyGamma(),
+                            new HigherOrderFunctionDef(new Variable("x"),
+                                                       new IntType(),
+                                                       new BooleanExp(true))));
+    }
+
+    @Test
+    public void higherOrderFunctionCanUsePassedVariable() throws IllTypedException {
+        // (x: int) => x + 1
+        final Variable x = new Variable("x");
+        assertEquals(new FunctionType(new IntType(), new IntType()),
+                     typeof(makeEmptyGamma(),
+                            new HigherOrderFunctionDef(x,
+                                                       new IntType(),
+                                                       new BinopExp(new VariableExp(x),
+                                                                    new PlusBOP(),
+                                                                    new IntegerExp(1)))));
+    }
+
+    @Test
+    public void higherOrderFunctionCanCaptureEnvironment() throws IllTypedException {
+        // [x -> int] (y: int) => y + x
+        final Variable x = new Variable("x");
+        final Variable y = new Variable("y");
+
+        assertEquals(new FunctionType(new IntType(), new IntType()),
+                     typeof(makeGamma(new String[]{ "x" }, new Type[]{ new IntType() }),
+                            new HigherOrderFunctionDef(y,
+                                                       new IntType(),
+                                                       new BinopExp(new VariableExp(y),
+                                                                    new PlusBOP(),
+                                                                    new VariableExp(x)))));
+    }
+
+    @Test
+    public void higherOrderFunctionCanShadowEnvironment() throws IllTypedException {
+        // [x -> int] (x: bool) => x
+        final Variable x = new Variable("x");
+        
+        assertEquals(new FunctionType(new BoolType(), new BoolType()),
+                     typeof(makeGamma(new String[]{ "x" }, new Type[]{ new IntType() }),
+                            new HigherOrderFunctionDef(x,
+                                                       new BoolType(),
+                                                       new VariableExp(x))));
+    }
 } // TypecheckerTest
