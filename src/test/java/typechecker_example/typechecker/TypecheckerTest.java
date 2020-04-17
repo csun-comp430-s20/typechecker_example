@@ -27,6 +27,28 @@ public class TypecheckerTest {
         return gamma;
     } // makeGamma
 
+    public static List<FormalParameter> makeFormalParams(final Type[] types,
+                                                         final String[] variables) {
+        assert(types.length == variables.length);
+        final List<FormalParameter> list = new ArrayList<FormalParameter>();
+
+        for (int index = 0; index < types.length; index++) {
+            list.add(new FormalParameter(types[index], new Variable(variables[index])));
+        }
+
+        return list;
+    } // makeFormalParams
+
+    public static List<Stmt> makeStatements(final Stmt... statements) {
+        final List<Stmt> list = new ArrayList<Stmt>();
+
+        for (final Stmt stmt : statements) {
+            list.add(stmt);
+        }
+
+        return list;
+    } // makeStatements
+    
     public static Program makeProgram(final FirstOrderFunctionDefinition... functions) {
         final List<FirstOrderFunctionDefinition> list = new ArrayList<FirstOrderFunctionDefinition>();
         for (final FirstOrderFunctionDefinition function : functions) {
@@ -34,6 +56,14 @@ public class TypecheckerTest {
         }
         return new Program(list);
     } // makeProgram
+
+    public static List<Exp> makeActualParams(final Exp... exps) {
+        final List<Exp> list = new ArrayList<Exp>();
+        for (final Exp exp : exps) {
+            list.add(exp);
+        }
+        return list;
+    } // makeActualParams
     
     public static Type typeof(final Map<Variable, Type> gamma,
                               final Exp e)
@@ -214,5 +244,161 @@ public class TypecheckerTest {
         typeof(makeGamma(new String[]{ "x" }, new Type[]{ ft }),
                new CallHigherOrderFunction(new VariableExp(x),
                                            new BooleanExp(true)));
+    }
+
+    @Test(expected = IllTypedException.class)
+    public void firstOrderFunctionsCannotHaveDuplicateFormalParameterNames() throws IllTypedException {
+        // int foo(int x, int x) { return 1; }
+        final FirstOrderFunctionDefinition fdef =
+            new FirstOrderFunctionDefinition(new IntType(),
+                                             new FunctionName("foo"),
+                                             makeFormalParams(new Type[]{ new IntType(), new IntType() },
+                                                              new String[]{ "x", "x" }),
+                                             makeStatements(),
+                                             new IntegerExp(1));
+        final Program p = makeProgram(fdef);
+        new Typechecker(p).typecheckProgram(p);
+    }
+
+    @Test(expected = IllTypedException.class)
+    public void firstOrderFunctionsNeedDistinctNames() throws IllTypedException {
+        // int foo() { return 1; }
+        // int foo() { return 1; }
+        final FirstOrderFunctionDefinition fdef =
+            new FirstOrderFunctionDefinition(new IntType(),
+                                             new FunctionName("foo"),
+                                             makeFormalParams(new Type[0], new String[0]),
+                                             makeStatements(),
+                                             new IntegerExp(1));
+        final Program p = makeProgram(fdef, fdef);
+        new Typechecker(p);
+    }
+    
+    @Test
+    public void firstOrderFunctionsCanBeCalled() throws IllTypedException {
+        // int foo() { return 1; }
+        // foo()
+
+        final FunctionName fn = new FunctionName("foo");
+        final FirstOrderFunctionDefinition fdef =
+            new FirstOrderFunctionDefinition(new IntType(),
+                                             fn,
+                                             makeFormalParams(new Type[0], new String[0]),
+                                             makeStatements(),
+                                             new IntegerExp(1));
+        final Program p = makeProgram(fdef);
+        final Typechecker typechecker = new Typechecker(p);
+        typechecker.typecheckProgram(p);
+        assertEquals(new IntType(),
+                     typechecker.typeof(makeEmptyGamma(),
+                                        new CallFirstOrderFunction(fn,
+                                                                   makeActualParams())));
+    }
+
+    @Test
+    public void firstOrderFunctionsCanUseParams() throws IllTypedException {
+        // int foo(int x) { return x; }
+        // foo(1)
+
+        final FunctionName fn = new FunctionName("foo");
+        final List<FormalParameter> formalParams =
+            makeFormalParams(new Type[]{ new IntType() },
+                             new String[]{ "x" });
+        final FirstOrderFunctionDefinition fdef =
+            new FirstOrderFunctionDefinition(new IntType(),
+                                             fn,
+                                             formalParams,
+                                             makeStatements(),
+                                             new VariableExp(new Variable("x")));
+        final Program p = makeProgram(fdef);
+        final List<Exp> actualParams =
+            makeActualParams(new IntegerExp(1));
+        final Typechecker typechecker = new Typechecker(p);
+        typechecker.typecheckProgram(p);
+        assertEquals(new IntType(),
+                     new Typechecker(p).typeof(makeEmptyGamma(),
+                                               new CallFirstOrderFunction(fn,
+                                                                          actualParams)));
+    }
+
+    @Test
+    public void firstOrderFunctionsCanTakeParams() throws IllTypedException {
+        // int foo(int x, bool y, int => bool z) { return 1; }
+        // [a -> int, b -> bool, c -> int => bool] foo(a, b, c)
+        final Type[] types = new Type[]{ new IntType(),
+                                         new BoolType(),
+                                         new FunctionType(new IntType(), new BoolType()) };
+        final FunctionName fn = new FunctionName("foo");
+        final List<FormalParameter> formalParams =
+            makeFormalParams(types,
+                             new String[]{ "x", "y", "z" });
+        final FirstOrderFunctionDefinition fdef =
+            new FirstOrderFunctionDefinition(new IntType(),
+                                             fn,
+                                             formalParams,
+                                             makeStatements(),
+                                             new IntegerExp(1));
+
+        final Program p = makeProgram(fdef);
+        final Map<Variable, Type> gamma =
+            makeGamma(new String[]{ "a", "b", "c" },
+                      types);
+
+        final List<Exp> actualParams =
+            makeActualParams(new VariableExp(new Variable("a")),
+                             new VariableExp(new Variable("b")),
+                             new VariableExp(new Variable("c")));
+                                             
+        assertEquals(new IntType(),
+                     new Typechecker(p).typeof(gamma,
+                                               new CallFirstOrderFunction(fn,
+                                                                          actualParams)));
+    }
+
+    @Test(expected = IllTypedException.class)
+    public void firstOrderFunctionsRejectBadParams() throws IllTypedException {
+        // int foo(int x) { return x; }
+        // foo(true);
+        final FunctionName fn = new FunctionName("foo");
+        final FirstOrderFunctionDefinition fdef =
+            new FirstOrderFunctionDefinition(new IntType(),
+                                             fn,
+                                             makeFormalParams(new Type[0], new String[0]),
+                                             makeStatements(),
+                                             new IntegerExp(1));
+        final Program p = makeProgram(fdef);
+        new Typechecker(p).typeof(makeEmptyGamma(),
+                                  new CallFirstOrderFunction(fn,
+                                                             makeActualParams(new BooleanExp(true))));
+    }
+
+    @Test(expected = IllTypedException.class)
+    public void typecheckingFailsIfTypeErrorIsInBodyOfFirstOrderFunction() throws IllTypedException {
+        // int foo() { break; return 1; }
+        final FunctionName fn = new FunctionName("foo");
+        final FirstOrderFunctionDefinition fdef =
+            new FirstOrderFunctionDefinition(new IntType(),
+                                             fn,
+                                             makeFormalParams(new Type[0], new String[0]),
+                                             makeStatements(new BreakStmt()),
+                                             new IntegerExp(1));
+
+        final Program p = makeProgram(fdef);
+        new Typechecker(p).typecheckProgram(p);
+    }
+
+    @Test(expected = IllTypedException.class)
+    public void typecheckingFailsOnReturnTypeMismatch() throws IllTypedException {
+        // int foo() { return true; }
+        final FunctionName fn = new FunctionName("foo");
+        final FirstOrderFunctionDefinition fdef =
+            new FirstOrderFunctionDefinition(new IntType(),
+                                             fn,
+                                             makeFormalParams(new Type[0], new String[0]),
+                                             makeStatements(),
+                                             new BooleanExp(true));
+
+        final Program p = makeProgram(fdef);
+        new Typechecker(p).typecheckProgram(p);
     }
 } // TypecheckerTest
