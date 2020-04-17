@@ -178,6 +178,39 @@ public class TypecheckerTest {
     }
 
     @Test
+    public void boolAndBoolGivesBool() throws IllTypedException {
+        assertEquals(new BoolType(),
+                     typeof(makeEmptyGamma(),
+                            new BinopExp(new BooleanExp(true),
+                                         new AndBOP(),
+                                         new BooleanExp(false))));
+    }
+
+    @Test(expected = IllTypedException.class)
+    public void boolAndIntGivesTypeError() throws IllTypedException {
+        typeof(makeEmptyGamma(),
+               new BinopExp(new BooleanExp(true),
+                            new AndBOP(),
+                            new IntegerExp(0)));
+    }
+
+    @Test(expected = IllTypedException.class)
+    public void intAndBoolGivesTypeError() throws IllTypedException {
+        typeof(makeEmptyGamma(),
+               new BinopExp(new IntegerExp(0),
+                            new AndBOP(),
+                            new BooleanExp(true)));
+    }
+
+    @Test(expected = IllTypedException.class)
+    public void intAndIntGivesTypeError() throws IllTypedException {
+        typeof(makeEmptyGamma(),
+               new BinopExp(new IntegerExp(0),
+                            new AndBOP(),
+                            new IntegerExp(0)));
+    }
+    
+    @Test
     public void canCreateHigherOrderFunction() throws IllTypedException {
         // (x: int) => true
         assertEquals(new FunctionType(new IntType(), new BoolType()),

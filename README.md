@@ -18,7 +18,7 @@ bop is a binary operator (takes two arguments)
 
 t ::= int | bool | t1 => t2
 e ::= x| i | b | e1 bop e2 | (x: t) => e | e1(e2) | fn(e*)
-bop ::= < | +
+bop ::= < | + | &&
 s ::= empty | continue | break | let x: t = e | x = e |
       for (s1; e; s2) { s* }
 fp ::= t x
