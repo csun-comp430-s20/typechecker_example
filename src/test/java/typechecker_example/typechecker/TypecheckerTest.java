@@ -81,7 +81,7 @@ public class TypecheckerTest {
                      typeof(makeEmptyGamma(),
                             new BinopExp(new IntegerExp(0),
                                          new LessThanBOP(),
-                                         new IntegerExp(0))));
+                                         new IntegerExp(1))));
     }
 
     @Test(expected = IllTypedException.class)
@@ -105,6 +105,39 @@ public class TypecheckerTest {
         typeof(makeEmptyGamma(),
                new BinopExp(new BooleanExp(true),
                             new LessThanBOP(),
+                            new BooleanExp(false)));
+    }
+
+    @Test
+    public void intPlusIntGivesInt() throws IllTypedException {
+        assertEquals(new IntType(),
+                     typeof(makeEmptyGamma(),
+                            new BinopExp(new IntegerExp(0),
+                                         new PlusBOP(),
+                                         new IntegerExp(1))));
+    }
+
+    @Test(expected = IllTypedException.class)
+    public void intPlusBoolGivesTypeError() throws IllTypedException {
+        typeof(makeEmptyGamma(),
+               new BinopExp(new IntegerExp(0),
+                            new PlusBOP(),
+                            new BooleanExp(true)));
+    }
+
+    @Test(expected = IllTypedException.class)
+    public void boolPlusIntGivesTypeError() throws IllTypedException {
+        typeof(makeEmptyGamma(),
+               new BinopExp(new BooleanExp(true),
+                            new PlusBOP(),
+                            new IntegerExp(0)));
+    }
+
+    @Test(expected = IllTypedException.class)
+    public void boolPlusBoolGivesTypeError() throws IllTypedException {
+        typeof(makeEmptyGamma(),
+               new BinopExp(new BooleanExp(true),
+                            new PlusBOP(),
                             new BooleanExp(false)));
     }
 } // TypecheckerTest
