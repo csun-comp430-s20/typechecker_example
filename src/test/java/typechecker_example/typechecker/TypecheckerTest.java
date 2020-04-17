@@ -552,6 +552,16 @@ public class TypecheckerTest {
     }
 
     @Test(expected = IllTypedException.class)
+    public void cannotCallNonexistantFirstOrderFunction() throws IllTypedException {
+        // foo(true);
+        final FunctionName fn = new FunctionName("foo");
+        final Program p = makeProgram();
+        new Typechecker(p).typeof(makeEmptyGamma(),
+                                  new CallFirstOrderFunction(fn,
+                                                             makeActualParams(new BooleanExp(true))));
+    }
+
+    @Test(expected = IllTypedException.class)
     public void firstOrderFunctionsRejectBadParams() throws IllTypedException {
         // int foo(int x) { return x; }
         // foo(true);
