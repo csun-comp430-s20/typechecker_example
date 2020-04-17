@@ -60,4 +60,51 @@ public class TypecheckerTest {
         typeof(makeEmptyGamma(),
                new VariableExp(new Variable("x")));
     }
+
+    @Test
+    public void integerExpReturnsInt() throws IllTypedException {
+        assertEquals(new IntType(),
+                     typeof(makeEmptyGamma(),
+                            new IntegerExp(0)));
+    }
+
+    @Test
+    public void booleanExpReturnsBool() throws IllTypedException {
+        assertEquals(new BoolType(),
+                     typeof(makeEmptyGamma(),
+                            new BooleanExp(true)));
+    }
+
+    @Test
+    public void intLessThanIntGivesBool() throws IllTypedException {
+        assertEquals(new BoolType(),
+                     typeof(makeEmptyGamma(),
+                            new BinopExp(new IntegerExp(0),
+                                         new LessThanBOP(),
+                                         new IntegerExp(0))));
+    }
+
+    @Test(expected = IllTypedException.class)
+    public void intLessThanBoolGivesTypeError() throws IllTypedException {
+        typeof(makeEmptyGamma(),
+               new BinopExp(new IntegerExp(0),
+                            new LessThanBOP(),
+                            new BooleanExp(true)));
+    }
+
+    @Test(expected = IllTypedException.class)
+    public void boolLessThanIntGivesTypeError() throws IllTypedException {
+        typeof(makeEmptyGamma(),
+               new BinopExp(new BooleanExp(true),
+                            new LessThanBOP(),
+                            new IntegerExp(0)));
+    }
+
+    @Test(expected = IllTypedException.class)
+    public void boolLessThanBoolGivesTypeError() throws IllTypedException {
+        typeof(makeEmptyGamma(),
+               new BinopExp(new BooleanExp(true),
+                            new LessThanBOP(),
+                            new BooleanExp(false)));
+    }
 } // TypecheckerTest
